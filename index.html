@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GMH – Gestión de Diesel</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber: #C94412;
+    --amber-dark: #A33610;
+    --amber-light: #F09060;
+    --cream: #FDF6F2;
+    --navy: #8F3A14;
+    --navy-mid: #A84820;
+    --navy-light: #C05A2C;
+    --steel: #7A5040;
+    --mist: #FAF0ED;
+    --white: #FFFFFF;
+    --danger: #B91C1C;
+    --success: #27AE60;
+    --text-dark: #3D1505;
+    --text-mid: #6B4535;
+    --text-light: #A87060;
+    --border: #EDD9D3;
+    --shadow-sm: 0 1px 3px rgba(143,58,20,0.10);
+    --shadow-md: 0 4px 16px rgba(143,58,20,0.14);
+    --shadow-lg: 0 12px 40px rgba(143,58,20,0.22);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Barlow',sans-serif;
+    min-height:100vh;
+    color: var(--text-dark);
+    background-color: var(--navy);
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    position:fixed; top:0; left:0; bottom:0; width:260px;
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-mid) 100%);
+    border-right:1px solid rgba(255,255,255,0.06);
+    z-index:100; display:flex; flex-direction:column;
+    padding:0 0 24px 0;
+  }
+  .sidebar-logo {
+    padding:28px 24px 22px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-logo .brand {
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:900; font-size:22px; color:var(--amber-light);
+    letter-spacing:1px; text-transform:uppercase;
+  }
+  .sidebar-logo .sub {
+    font-size:11px; color:rgba(255,255,255,0.4);
+    letter-spacing:2px; text-transform:uppercase; margin-top:3px;
+  }
+  .sidebar-user {
+    padding:16px 24px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    display:flex; align-items:center; gap:10px;
+  }
+  .user-avatar {
+    width:34px; height:34px; border-radius:50%;
+    background:var(--amber); display:flex; align-items:center; justify-content:center;
+    font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; color:var(--white);
+    flex-shrink:0;
+  }
+  .user-name { font-size:13px; font-weight:600; color:var(--white); }
+  .user-role { font-size:11px; color:rgba(255,255,255,0.4); }
+  nav { flex:1; padding:16px 12px; overflow-y:auto; }
+  .nav-section-label {
+    font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+    color:rgba(255,255,255,0.3); padding:12px 12px 6px;
+  }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border-radius:8px; cursor:pointer; color:rgba(255,255,255,0.6);
+    font-size:13.5px; font-weight:500; transition:all .18s; margin-bottom:2px;
+    border:1px solid transparent;
+  }
+  .nav-item:hover { background:rgba(255,255,255,0.09); color:var(--white); }
+  .nav-item.active {
+    background:rgba(240,144,96,0.25); color:var(--amber-light);
+    border-color:rgba(240,144,96,0.35);
+  }
+  .nav-item .icon { width:18px; text-align:center; font-size:15px; flex-shrink:0; }
+  .logout-btn {
+    margin:0 12px; padding:10px 12px; border-radius:8px;
+    cursor:pointer; color:rgba(255,255,255,0.4); font-size:13px; font-weight:500;
+    display:flex; align-items:center; gap:10px; transition:all .18s;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .logout-btn:hover { color:var(--danger); border-color:rgba(192,57,43,0.3); background:rgba(192,57,43,0.07); }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left:260px; min-height:100vh;
+    background: var(--cream);
+  }
+  .topbar {
+    background: var(--white);
+    border-bottom:1px solid var(--border);
+    padding:0 32px; height:60px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:50;
+  }
+  .topbar-title {
+    font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:20px;
+    color:var(--navy); letter-spacing:.5px; text-transform:uppercase;
+  }
+  .topbar-actions { display:flex; gap:10px; align-items:center; }
+  .badge-today {
+    background:var(--mist); color:var(--text-mid); font-size:12px; font-weight:500;
+    padding:4px 10px; border-radius:20px; border:1px solid var(--border);
+  }
+  .content { padding:32px; }
+
+  /* ── PANELS ── */
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* ── STATS ROW ── */
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+  .stat-card {
+    background:var(--white); border-radius:12px; padding:20px 22px;
+    border:1px solid var(--border); box-shadow:var(--shadow-sm);
+    position:relative; overflow:hidden;
+  }
+  .stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--amber), var(--amber-light));
+  }
+  .stat-label { font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-light); margin-bottom:6px; }
+  .stat-value { font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:900; color:var(--navy); line-height:1; }
+  .stat-sub { font-size:12px; color:var(--text-light); margin-top:4px; }
+  .stat-icon { position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:36px; opacity:.08; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--white);
+    border-radius:12px; border:1px solid var(--border);
+    box-shadow: var(--shadow-sm); overflow:hidden;
+  }
+  .card-header {
+    padding:18px 24px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .card-title { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:17px; color:var(--navy); text-transform:uppercase; letter-spacing:.5px; }
+  .card-body { padding:24px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead tr { background:var(--navy); }
+  thead th {
+    padding:11px 16px; text-align:left; font-family:'Barlow Condensed',sans-serif;
+    font-weight:700; font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+    color:rgba(255,255,255,0.85);
+  }
+  tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+  tbody tr:hover { background:rgba(201,68,18,0.05); }
+  tbody td { padding:11px 16px; color:var(--text-dark); }
+  .id-badge {
+    background:var(--mist); color:var(--steel); font-size:11px; font-weight:700;
+    padding:2px 7px; border-radius:4px; font-family:'Barlow Condensed',sans-serif;
+  }
+  .plate-badge {
+    background:var(--navy); color:var(--amber-light); font-family:'Barlow Condensed',sans-serif;
+    font-weight:700; font-size:13px; padding:3px 9px; border-radius:5px; letter-spacing:1px;
+  }
+  .unit-badge {
+    background:rgba(201,68,18,0.12); color:var(--amber-dark); font-weight:700;
+    font-size:12px; padding:3px 8px; border-radius:4px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600;
+    cursor:pointer; border:none; transition:all .16s; font-family:'Barlow',sans-serif;
+    white-space:nowrap;
+  }
+  .btn-primary { background:var(--amber); color:var(--white); }
+  .btn-primary:hover { background:var(--amber-dark); box-shadow:0 4px 12px rgba(201,68,18,0.35); }
+  .btn-secondary { background:var(--mist); color:var(--steel); border:1px solid var(--border); }
+  .btn-secondary:hover { background:var(--border); }
+  .btn-danger { background:rgba(192,57,43,0.1); color:var(--danger); border:1px solid rgba(192,57,43,0.2); }
+  .btn-danger:hover { background:var(--danger); color:var(--white); }
+  .btn-success { background:var(--success); color:var(--white); }
+  .btn-sm { padding:5px 11px; font-size:12px; }
+  .btn-icon { padding:6px 8px; border-radius:6px; }
+  .action-btns { display:flex; gap:6px; }
+
+  /* ── FORM ── */
+  .form-grid { display:grid; gap:18px; }
+  .form-grid-2 { grid-template-columns:1fr 1fr; }
+  .form-grid-3 { grid-template-columns:1fr 1fr 1fr; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label { font-size:12px; font-weight:600; letter-spacing:.5px; color:var(--text-mid); text-transform:uppercase; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding:10px 13px; border:1.5px solid var(--border); border-radius:8px;
+    font-size:13.5px; color:var(--text-dark); background:var(--white);
+    font-family:'Barlow',sans-serif; transition:border .15s;
+    outline:none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color:var(--amber); box-shadow:0 0 0 3px rgba(201,68,18,0.12);
+  }
+  .form-group select { cursor:pointer; }
+  .form-actions { display:flex; gap:10px; justify-content:flex-end; padding-top:8px; }
+
+  /* ── SEARCH BAR ── */
+  .search-bar {
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    padding:16px 24px; border-bottom:1px solid var(--border); background:var(--mist);
+  }
+  .search-input-wrap { position:relative; flex:1; min-width:180px; }
+  .search-input-wrap input { width:100%; padding-left:34px; }
+  .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:14px; color:var(--text-light); pointer-events:none; }
+  .filter-row { display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* ── TABS ── */
+  .tabs { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:24px; }
+  .tab {
+    padding:10px 20px; font-size:13.5px; font-weight:600; cursor:pointer;
+    color:var(--text-light); border-bottom:2px solid transparent; margin-bottom:-2px;
+    transition:all .15s; font-family:'Barlow',sans-serif;
+  }
+  .tab.active { color:var(--amber-dark); border-bottom-color:var(--amber); }
+  .tab:hover:not(.active) { color:var(--text-dark); }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* ── VALE CARD ── */
+  .vale-preview {
+    background:var(--white); border:2px solid var(--amber); border-radius:12px;
+    padding:28px; max-width:540px; margin:0 auto;
+    box-shadow:0 8px 32px rgba(201,68,18,0.2);
+  }
+  .vale-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+  .vale-brand { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:22px; color:var(--navy); }
+  .vale-num { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; color:var(--amber); }
+  .vale-divider { border:none; border-top:1.5px solid var(--border); margin:16px 0; }
+  .vale-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+  .vale-row .lbl { color:var(--text-light); font-weight:500; }
+  .vale-row .val { font-weight:600; color:var(--navy); }
+  .vale-total { background:var(--navy); color:var(--white); border-radius:8px; padding:14px 18px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; }
+  .vale-total .lbl { font-size:12px; letter-spacing:1px; text-transform:uppercase; opacity:.7; }
+  .vale-total .val { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; color:var(--amber-light); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(143,58,20,0.55);
+    z-index:200; align-items:center; justify-content:center; backdrop-filter:blur(2px);
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background: var(--white);
+    border-radius:16px; padding:32px; width:100%; max-width:520px;
+    box-shadow:var(--shadow-lg); position:relative; animation: modalIn .2s ease;
+  }
+  @keyframes modalIn { from{transform:translateY(16px);opacity:0} to{transform:none;opacity:1} }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)}
+    80%{transform:translateX(5px)}
+  }
+  .modal-title { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:20px; color:var(--navy); text-transform:uppercase; margin-bottom:22px; }
+  .modal-close { position:absolute; top:16px; right:16px; background:var(--mist); border:none; border-radius:6px; padding:5px 9px; cursor:pointer; font-size:14px; color:var(--steel); }
+  .modal-close:hover { background:var(--border); }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed; bottom:28px; right:28px; background:var(--navy); color:var(--white);
+    padding:12px 20px; border-radius:10px; font-size:13.5px; font-weight:500;
+    box-shadow:var(--shadow-lg); z-index:999;
+    transform:translateY(20px); opacity:0; transition:all .25s; pointer-events:none;
+    display:flex; align-items:center; gap:8px;
+  }
+  #toast.show { transform:none; opacity:1; }
+  #toast .t-icon { color:var(--amber-light); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align:center; padding:56px 24px; }
+  .empty-state .big { font-size:48px; margin-bottom:12px; }
+  .empty-state p { color:var(--text-light); font-size:14px; }
+
+  /* ── STATUS CHIP ── */
+  .chip { padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:600; }
+  .chip-green { background:rgba(39,174,96,0.1); color:#1A8A47; }
+  .chip-amber { background:rgba(201,68,18,0.12); color:var(--amber-dark); }
+  .chip-red { background:rgba(192,57,43,0.1); color:var(--danger); }
+  .chip-grey { background:rgba(74,85,104,0.1); color:var(--steel); }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:900px){
+    #sidebar{width:220px;}
+    #main{margin-left:220px;}
+    .stats-row{grid-template-columns:1fr 1fr;}
+    .form-grid-3{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-screen" style="
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 50%,var(--navy-light) 100%);
+  display:flex;align-items:center;justify-content:center;
+">
+  <div style="
+    background:rgba(255,255,255,0.97);border-radius:20px;
+    padding:44px 48px;width:100%;max-width:420px;
+    box-shadow:0 24px 64px rgba(143,58,20,0.35);
+    animation:modalIn .3s ease;
+  ">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:28px;">
+      <img id="login-logo" src="" style="height:80px;object-fit:contain;" alt="Grupo Minero Honey">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:var(--navy);letter-spacing:1px;text-transform:uppercase;margin-top:10px;">GMH Diesel</div>
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-top:2px;">Sistema de Gestión de Flotilla</div>
+    </div>
+
+    <div id="login-error" style="
+      display:none;background:rgba(185,28,28,0.09);border:1.5px solid rgba(185,28,28,0.25);
+      border-radius:8px;padding:10px 14px;font-size:13px;color:var(--danger);
+      margin-bottom:18px;text-align:center;
+    ">Usuario o contraseña incorrectos</div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--text-mid);text-transform:uppercase;">Usuario</label>
+      <input type="text" id="login-user" placeholder="Ingresa tu usuario"
+        style="padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;width:100%;font-family:'Barlow',sans-serif;outline:none;transition:border .15s;"
+        onfocus="this.style.borderColor='var(--amber)';this.style.boxShadow='0 0 0 3px rgba(201,68,18,0.12)'"
+        onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div class="form-group" style="margin-bottom:24px;">
+      <label style="font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--text-mid);text-transform:uppercase;">Contraseña</label>
+      <div style="position:relative;">
+        <input type="password" id="login-pass" placeholder="••••••••"
+          style="padding:11px 44px 11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;width:100%;font-family:'Barlow',sans-serif;outline:none;transition:border .15s;"
+          onfocus="this.style.borderColor='var(--amber)';this.style.boxShadow='0 0 0 3px rgba(201,68,18,0.12)'"
+          onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'"
+          onkeydown="if(event.key==='Enter')doLogin()">
+        <button onclick="toggleLoginPass()" style="
+          position:absolute;right:12px;top:50%;transform:translateY(-50%);
+          background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-light);padding:0;
+        " id="login-eye">👁</button>
+      </div>
+    </div>
+    <button onclick="doLogin()" style="
+      width:100%;padding:13px;background:linear-gradient(135deg,var(--amber),var(--amber-dark));
+      color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;
+      font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;
+      cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(201,68,18,0.35);
+    "
+    onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(201,68,18,0.45)'"
+    onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(201,68,18,0.35)'"
+    >Iniciar Sesión</button>
+
+    <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--text-light);">
+      Grupo Minero Honey &nbsp;·&nbsp; GMH Diesel v1.0
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">⛽ GMH Diesel</div>
+    <div class="sub">Gestión de Flotilla</div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar">AM</div>
+    <div>
+      <div class="user-name">Andrea Martinez</div>
+      <div class="user-role">Administrador</div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section-label">General</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')">
+      <span class="icon">🏠</span> Dashboard
+    </div>
+
+    <div class="nav-section-label">Catálogos</div>
+    <div class="nav-item" onclick="showPanel('choferes')">
+      <span class="icon">👤</span> Choferes
+    </div>
+    <div class="nav-item" onclick="showPanel('unidades')">
+      <span class="icon">🚛</span> Unidades
+    </div>
+    <div class="nav-item" onclick="showPanel('gasolineras')">
+      <span class="icon">⛽</span> Gasolineras
+    </div>
+
+    <div class="nav-section-label">Vales de Diesel</div>
+    <div class="nav-item" onclick="showPanel('generar')">
+      <span class="icon">📝</span> Generar Vale
+    </div>
+    <div class="nav-item" onclick="showPanel('consultar')">
+      <span class="icon">🔍</span> Consultar Vales
+    </div>
+    <div class="nav-item" onclick="showPanel('pagos')">
+      <span class="icon">💳</span> Registrar Pago
+    </div>
+
+
+  </nav>
+  <div class="logout-btn" onclick="doLogout()">
+    <span>🚪</span> Cerrar Sesión
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-actions">
+      <span class="badge-today" id="todayDate"></span>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+        <div class="stat-card">
+          <div class="stat-icon">⛽</div>
+          <div class="stat-label">Vales Hoy</div>
+          <div class="stat-value" id="stat-vales">0</div>
+          <div class="stat-sub">generados hoy</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🚛</div>
+          <div class="stat-label">Unidades Activas</div>
+          <div class="stat-value" id="stat-unidades">0</div>
+          <div class="stat-sub">en flotilla</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👤</div>
+          <div class="stat-label">Choferes</div>
+          <div class="stat-value" id="stat-choferes">0</div>
+          <div class="stat-sub">registrados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💧</div>
+          <div class="stat-label">Litros este Mes</div>
+          <div class="stat-value" id="stat-importe">0</div>
+          <div id="stat-mes-comparacion" class="stat-sub">vs mes anterior</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="toggleDeuda()">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-label">Deuda Pendiente</div>
+          <div class="stat-value" id="stat-deuda" style="color:var(--danger)">$0.00</div>
+          <div class="stat-sub" id="stat-deuda-sub">vales sin pagar · ver detalle ▾</div>
+        </div>
+      </div>
+      <!-- Precio del diesel -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <div class="card-title">⛽ Precio Actual del Diesel</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span id="precio-vigencia" style="font-size:12px;color:var(--text-light)"></span>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-precio')">✏️ Actualizar Precio</button>
+          </div>
+        </div>
+        <div style="padding:18px 24px;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-light);margin-bottom:4px;">Precio por Litro</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:var(--navy);line-height:1;" id="precio-display">—</div>
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;">Historial de precios</div>
+            <div id="precio-historial" style="display:flex;flex-direction:column;gap:4px;max-height:80px;overflow-y:auto;"></div>
+          </div>
+          <div style="background:rgba(201,68,18,0.08);border:1.5px solid rgba(201,68,18,0.2);border-radius:10px;padding:14px 20px;min-width:200px;">
+            <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--amber-dark);margin-bottom:6px;">ℹ️ Importante</div>
+            <div style="font-size:12.5px;color:var(--text-mid);line-height:1.5;">El precio nuevo <strong>solo aplica a vales futuros</strong>. Los vales ya registrados conservan su precio original.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deuda pendiente detalle -->
+      <div class="card" id="deuda-detail-card" style="display:none;margin-bottom:24px;">
+        <div class="card-header">
+          <div class="card-title">💸 Deuda Pendiente por Gasolinera</div>
+          <button class="btn btn-secondary btn-sm" onclick="toggleDeuda()">Ocultar</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div id="deuda-detail-content" style="padding:20px 24px;color:var(--text-light);font-size:13.5px;">
+            Registra vales con precio para ver la deuda pendiente.
+          </div>
+        </div>
+      </div>
+
+      <!-- Litros por día -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <div class="card-title">📊 Litros por Día</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <select id="chart-periodo" onchange="renderChartLitros()" style="padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:'Barlow',sans-serif;background:var(--white);color:var(--navy);">
+              <option value="15">Últimos 15 días</option>
+              <option value="30" selected>Últimos 30 días</option>
+              <option value="60">Últimos 60 días</option>
+            </select>
+          </div>
+        </div>
+        <div style="padding:20px 24px 24px;">
+          <canvas id="chart-litros" height="110"></canvas>
+          <div id="chart-empty" style="display:none;text-align:center;padding:32px;color:var(--text-light);font-size:13.5px;">
+            <div style="font-size:36px;margin-bottom:8px">📊</div>
+            Genera vales para ver la gráfica de consumo diario
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimos vales -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Últimos Vales Generados</div>
+          <button class="btn btn-primary btn-sm" onclick="showPanel('generar')">+ Nuevo Vale</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>VALE</th><th>FECHA</th><th>UNIDAD</th><th>CHOFER</th><th>LITROS</th><th>MONTO</th><th>ESTADO</th><th>ACCIÓN</th>
+            </tr></thead>
+            <tbody id="dash-vales-tbody">
+              <tr><td colspan="7"><div class="empty-state"><div class="big">⛽</div><p>No hay vales generados aún. <br>Genera el primer vale.</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CHOFERES ── -->
+    <div class="panel" id="panel-choferes">
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="flex:1" class="card">
+          <div class="card-header">
+            <div class="card-title">Listado de Choferes</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-chofer')">+ Agregar</button>
+          </div>
+          <div class="search-bar">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" placeholder="Buscar chofer..." oninput="filterTable('tbl-choferes',this.value)">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="tbl-choferes">
+              <thead><tr><th>ID</th><th>NOMBRE</th><th>APELLIDOS</th><th>ACCIONES</th></tr></thead>
+              <tbody id="choferes-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── UNIDADES ── -->
+    <div class="panel" id="panel-unidades">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Listado de Unidades</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-unidad')">+ Agregar</button>
+        </div>
+        <div class="search-bar">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Buscar unidad o placas..." oninput="filterTable('tbl-unidades',this.value)">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="tbl-unidades">
+            <thead><tr><th>ID</th><th>PLACAS</th><th>UNIDAD</th><th>CHOFER</th><th>ACCIONES</th></tr></thead>
+            <tbody id="unidades-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GASOLINERAS ── -->
+    <div class="panel" id="panel-gasolineras">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Listado de Gasolineras</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-gasolinera')">+ Agregar</button>
+        </div>
+        <div class="table-wrap">
+          <table id="tbl-gasolineras">
+            <thead><tr><th>#</th><th>NOMBRE</th><th>VALES TOTALES</th><th>LITROS TOTALES</th><th>ACCIONES</th></tr></thead>
+            <tbody id="gasolineras-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GENERAR VALE ── -->
+    <div class="panel" id="panel-generar">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Nuevo Vale de Diesel</div></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Gasolinera</label>
+                <select id="v-gasolinera">
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Unidad</label>
+                <select id="v-unidad" onchange="autoFillVale()">
+                  <option value="">— Seleccionar —</option>
+                </select>
+              </div>
+              <div class="form-grid form-grid-2" style="grid-column:1/-1;gap:12px;">
+                <div class="form-group">
+                  <label>Placas</label>
+                  <input type="text" id="v-placas" placeholder="Auto-llenado" readonly style="background:var(--mist)">
+                </div>
+                <div class="form-group">
+                  <label>Operador / Chofer</label>
+                  <input type="text" id="v-operador" placeholder="Auto-llenado" readonly style="background:var(--mist)">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Tipo de Combustible</label>
+                <select id="v-combustible">
+                  <option>Diesel</option>
+                  <option>Gasolina Magna</option>
+                  <option>Gasolina Premium</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Cantidad de Litros</label>
+                <input type="number" id="v-litros" placeholder="0" min="0" oninput="updatePreview()">
+              </div>
+              <div class="form-group">
+                <label>Autoriza</label>
+                <input type="text" id="v-autoriza" placeholder="Nombre de quien autoriza">
+              </div>
+              <div class="form-actions" style="grid-column:1/-1;">
+                <button class="btn btn-secondary" onclick="limpiarVale()">Limpiar</button>
+                <button class="btn btn-primary" onclick="generarVale()">⛽ Generar Vale</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- preview -->
+        <div>
+          <div style="font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-light);margin-bottom:12px;">Vista Previa del Vale</div>
+          <div class="vale-preview" id="vale-preview-box">
+            <div class="vale-header">
+              <div>
+                <div class="vale-brand">GMH DIESEL</div>
+                <div style="font-size:12px;color:var(--text-light);margin-top:2px;">Grupo Minero Honey</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11px;color:var(--text-light)">Vale No.</div>
+                <div class="vale-num" id="pv-num">—</div>
+              </div>
+            </div>
+            <hr class="vale-divider">
+            <div class="vale-row"><span class="lbl">Fecha</span><span class="val" id="pv-fecha">—</span></div>
+            <div class="vale-row"><span class="lbl">Gasolinera</span><span class="val" id="pv-gas">—</span></div>
+            <div class="vale-row"><span class="lbl">Unidad</span><span class="val" id="pv-unidad">—</span></div>
+            <div class="vale-row"><span class="lbl">Placas</span><span class="val" id="pv-placas">—</span></div>
+            <div class="vale-row"><span class="lbl">Operador</span><span class="val" id="pv-op">—</span></div>
+            <div class="vale-row"><span class="lbl">Combustible</span><span class="val" id="pv-comb">—</span></div>
+            <div class="vale-row"><span class="lbl">Litros</span><span class="val" id="pv-litros">—</span></div>
+            <div class="vale-row"><span class="lbl">Autoriza</span><span class="val" id="pv-auth">—</span></div>
+            <div style="margin-top:18px;border-top:2px dashed var(--border);padding-top:14px;text-align:center;">
+              <div style="font-size:11px;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;">Firma del Operador</div>
+              <div style="height:40px;border-bottom:1.5px solid var(--border);margin:14px 32px 4px;"></div>
+              <div style="font-size:11px;color:var(--text-light)">Nombre y firma</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:14px;">
+            <button class="btn btn-secondary" onclick="if(state.vales.length)imprimirTicket(state.vales[0])">🖨️ Reimprimir último</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONSULTAR VALES ── -->
+    <div class="panel" id="panel-consultar">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Vales de Combustible – Consulta</div>
+          <button class="btn btn-secondary btn-sm" onclick="exportarVales()">⬇ Exportar</button>
+        </div>
+        <div class="search-bar">
+          <div class="filter-row" style="flex:1;gap:10px;">
+            <select id="f-gasolinera" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'Barlow',sans-serif;">
+              <option>Gasolinera Agua Blanca</option>
+              <option>Gasolinera Central</option>
+              <option>Todas</option>
+            </select>
+            <input type="date" id="f-inicio" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;">
+            <input type="date" id="f-fin" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;">
+            <input type="text" id="f-excepcion" placeholder="Excepción / Unidad" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;min-width:150px;">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="buscarVales()">🔍 Buscar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>VALE</th><th>FECHA</th><th>LUGAR</th><th>UNIDAD</th><th>PRODUCTO</th><th>LITROS</th><th>TOTAL</th><th>ESTADO</th><th>ACCIÓN</th></tr></thead>
+            <tbody id="consulta-tbody">
+              <tr><td colspan="9"><div class="empty-state"><div class="big">📋</div><p>Aplica filtros y presiona Buscar</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:13.5px;">
+          <span id="consulta-count" style="color:var(--text-light)">Total de vales: 0</span>
+          <span id="consulta-total" style="font-weight:700;color:var(--navy)">Total importes: $0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REGISTRAR PAGO ── -->
+    <div class="panel" id="panel-pagos">
+
+      <!-- Filtros -->
+      <div class="card" style="margin-bottom:20px;">
+        <div style="padding:16px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <select id="p-gasolinera" style="padding:9px 13px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'Barlow',sans-serif;">
+            <option value="">Todas las gasolineras</option>
+            <option>Gasolinera Agua Blanca</option>
+            <option>Gasolinera Central</option>
+            <option>Gasolinera Norte</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:6px;background:rgba(201,68,18,0.08);border:1.5px solid rgba(201,68,18,0.28);border-radius:8px;padding:8px 13px;">
+            <span style="font-size:12px;font-weight:600;color:var(--amber-dark);white-space:nowrap;">💲 Precio override ($/L):</span>
+            <input type="number" id="p-precio-litro" placeholder="Usar precio del vale" step="0.01" min="0"
+              style="border:none;background:transparent;font-size:13px;width:120px;padding:0;outline:none;color:var(--navy);font-weight:700;">
+          </div>
+          <button class="btn btn-primary" onclick="renderPagosPorDia()">🔍 Ver Pendientes</button>
+          <span style="margin-left:auto;font-size:12px;color:var(--text-light)">Los vales se agrupan por día de despacho</span>
+        </div>
+      </div>
+
+      <!-- Días agrupados -->
+      <div id="pagos-dias-container"></div>
+
+      <!-- Totales globales -->
+      <div class="card" id="pagos-totales-bar" style="display:none;margin-top:4px;">
+        <div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;gap:28px;">
+            <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-light)">Días pendientes</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--navy)" id="p-total-dias">0</div></div>
+            <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-light)">Total vales</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--navy)" id="p-total-vales">0</div></div>
+            <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-light)">Total litros</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--navy)" id="p-total-litros">0</div></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-light)">Total a pagar</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;color:var(--danger)" id="p-total-monto">$0.00</div>
+          </div>
+          <button class="btn btn-success" onclick="pagarTodo()" style="font-size:15px;padding:12px 24px;">✅ Pagar Todo</button>
+        </div>
+      </div>
+    </div>
+
+
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── MODAL GASOLINERA ── -->
+<div class="modal-overlay" id="modal-gasolinera">
+  <div class="modal" style="max-width:400px">
+    <button class="modal-close" onclick="closeModal('modal-gasolinera')">✕</button>
+    <div class="modal-title" id="mg-title">Agregar Gasolinera</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nombre de la Gasolinera</label>
+        <input type="text" id="mg-nombre" placeholder="Ej: Gasolinera Norte">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-gasolinera')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarGasolinera()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CONFIRMAR GENÉRICO ── -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title" id="confirm-title" style="color:var(--danger)">⚠️ Confirmar</div>
+    <p id="confirm-msg" style="font-size:14px;color:var(--text-mid);margin-bottom:22px;line-height:1.6;"></p>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="confirmRespond(false)">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok-btn" onclick="confirmRespond(true)" style="background:var(--danger);color:white;">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CONFIRMAR CANCELACIÓN ── -->
+<div class="modal-overlay" id="modal-cancelar">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-close" onclick="closeModal('modal-cancelar')">✕</button>
+    <div class="modal-title" style="color:var(--danger)">⚠️ Cancelar Vale</div>
+    <div style="background:rgba(192,57,43,0.07);border:1.5px solid rgba(192,57,43,0.2);border-radius:8px;padding:14px;margin-bottom:18px;">
+      <div id="cancelar-info" style="font-size:13.5px;color:var(--text-dark);line-height:1.6;"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label>Motivo de cancelación</label>
+      <input type="text" id="cancelar-motivo" placeholder="Ej: Error en captura, vale duplicado...">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-cancelar')">No, conservar</button>
+      <button class="btn btn-danger" onclick="confirmarCancelacion()" style="background:var(--danger);color:white;">Sí, cancelar vale</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL PRECIO DIESEL ── -->
+<div class="modal-overlay" id="modal-precio">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-close" onclick="closeModal('modal-precio')">✕</button>
+    <div class="modal-title">Actualizar Precio del Diesel</div>
+    <div style="background:rgba(201,68,18,0.08);border:1.5px solid rgba(201,68,18,0.2);border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:12.5px;color:var(--amber-dark);line-height:1.5;">
+      ⚠️ Este precio <strong>solo aplica a vales nuevos</strong>. Los vales ya guardados <strong>no se modifican</strong>.
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nuevo Precio por Litro ($)</label>
+        <input type="number" id="mp-precio" placeholder="0.00" step="0.01" min="0"
+          style="font-size:24px;font-weight:700;text-align:center;padding:14px;">
+      </div>
+      <div class="form-group">
+        <label>Gasolinera (opcional)</label>
+        <select id="mp-gasolinera">
+          <option value="Todas">Aplica a todas</option>
+          <option>Gasolinera Agua Blanca</option>
+          <option>Gasolinera Central</option>
+          <option>Gasolinera Norte</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nota / Motivo (opcional)</label>
+        <input type="text" id="mp-nota" placeholder="Ej: Precio PEMEX semana 17">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-precio')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarPrecioDiesel()">💾 Guardar Precio</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CHOFER ── -->
+<div class="modal-overlay" id="modal-chofer">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-chofer')">✕</button>
+    <div class="modal-title" id="mc-title">Agregar Chofer</div>
+    <div class="form-grid form-grid-2">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" id="mc-nombre" placeholder="Nombre(s)" onkeydown="if(event.key==='Enter')guardarChofer()">
+      </div>
+      <div class="form-group">
+        <label>Apellidos</label>
+        <input type="text" id="mc-apellidos" placeholder="Apellido(s)" onkeydown="if(event.key==='Enter')guardarChofer()">
+      </div>
+      <div class="form-actions" style="grid-column:1/-1">
+        <button class="btn btn-secondary" onclick="closeModal('modal-chofer')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarChofer()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL UNIDAD ── -->
+<div class="modal-overlay" id="modal-unidad">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-unidad')">✕</button>
+    <div class="modal-title" id="mu-title">Agregar Unidad</div>
+    <div class="form-grid form-grid-2">
+      <div class="form-group">
+        <label>Placas</label>
+        <input type="text" id="mu-placas" placeholder="664-EC-5">
+      </div>
+      <div class="form-group">
+        <label>No. Unidad</label>
+        <input type="text" id="mu-unidad" placeholder="21F">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Chofer Asignado</label>
+        <select id="mu-chofer"><option value="">— Sin asignar —</option></select>
+      </div>
+      <div class="form-actions" style="grid-column:1/-1">
+        <button class="btn btn-secondary" onclick="closeModal('modal-unidad')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarUnidad()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER VALE -->
+<div class="modal-overlay" id="modal-ver-vale">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" onclick="closeModal('modal-ver-vale')">✕</button>
+    <div class="modal-title">Detalle del Vale</div>
+    <div id="ver-vale-content"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><span class="t-icon">✓</span><span id="toast-msg">OK</span></div>
+
+<script>
+// ──────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────
+let state = {
+  choferes: [
+    {id:7,nombre:'Apolinar',apellidos:'Rosales'},
+    {id:12,nombre:'Celso',apellidos:'Ibarra'},
+    {id:13,nombre:'Cristian',apellidos:'Ibarra'},
+    {id:14,nombre:'Daniel',apellidos:'Ibarra'},
+    {id:16,nombre:'Fernando',apellidos:'Gonz.'},
+    {id:17,nombre:'Fulgencio',apellidos:'Mejia'},
+    {id:18,nombre:'Hector',apellidos:'Perez'},
+    {id:26,nombre:'José',apellidos:'Hernández'},
+    {id:27,nombre:'Primo',apellidos:'Olalde'},
+    {id:28,nombre:'Mauro',apellidos:'Ramirez'},
+    {id:29,nombre:'Erik Martin',apellidos:'Martinez'},
+    {id:30,nombre:'Marcos',apellidos:'Rosales Cruz'},
+    {id:33,nombre:'Manuel',apellidos:'Neri Montiel'},
+    {id:34,nombre:'Erik M.',apellidos:'Martinez Ibarra'},
+    {id:35,nombre:'Pablo',apellidos:'Ramirez'},
+    {id:36,nombre:'Andrea',apellidos:'Mtz.'},
+    {id:42,nombre:'Noe',apellidos:'Neri Amador'},
+  ],
+  unidades: [
+    {id:1,placas:'664-EC-5',unidad:'21F',chofer_id:null},
+    {id:3,placas:'855-EC-8',unidad:'25F',chofer_id:null},
+    {id:4,placas:'38-AF-5F',unidad:'42F',chofer_id:42},
+    {id:5,placas:'52-AA-SA',unidad:'37F',chofer_id:null},
+    {id:6,placas:'67-AP-8W',unidad:'49F',chofer_id:null},
+    {id:7,placas:'280-ER-5',unidad:'31F',chofer_id:null},
+    {id:8,placas:'209-EC-6',unidad:'17F',chofer_id:null},
+    {id:9,placas:'39-AT-5W',unidad:'45F',chofer_id:27},
+    {id:10,placas:'93-AH-3X',unidad:'44F',chofer_id:null},
+    {id:12,placas:'394-ED-2',unidad:'27F',chofer_id:null},
+    {id:15,placas:'39-AF-5F',unidad:'43F',chofer_id:null},
+    {id:16,placas:'455-AN-1',unidad:'36F',chofer_id:26},
+    {id:17,placas:'24-AF-2Y',unidad:'35F',chofer_id:18},
+    {id:18,placas:'79-AU-1X',unidad:'46F',chofer_id:null},
+  ],
+  vales: [],
+  precioDiesel: null,
+  precioHistorial: [],
+  gasolineras: ['Gasolinera Agua Blanca','Gasolinera Central','Gasolinera Norte'],
+  nextValeId: 1001,
+  nextChoferID: 50,
+  nextUnidadID: 20,
+  editChofer: null,
+  editUnidad: null,
+};
+
+// ──────────────────────────────────────────────
+// NAVIGATION
+// ──────────────────────────────────────────────
+const panelTitles = {
+  'dashboard':'Dashboard','choferes':'Choferes','unidades':'Unidades','gasolineras':'Gasolineras',
+  'generar':'Generar Vale','consultar':'Consultar Vales','pagos':'Registrar Pago'
+};
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes(`'${name}'`))n.classList.add('active');
+  });
+  document.getElementById('topbarTitle').textContent = panelTitles[name]||name;
+  if(name==='choferes') renderChoferes();
+  if(name==='unidades') renderUnidades();
+  if(name==='gasolineras') renderGasolineras();
+  if(name==='generar') populateValeSelects();
+  if(name==='dashboard') updateDashboard();
+  if(name==='pagos') renderPagosPorDia();
+}
+
+// ──────────────────────────────────────────────
+// UTILS
+// ──────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+function openModal(id){
+  // Reset edit state when opening for "new"
+  if(id==='modal-chofer'){
+    state.editChofer=null;
+    document.getElementById('mc-title').textContent='Agregar Chofer';
+    document.getElementById('mc-nombre').value='';
+    document.getElementById('mc-apellidos').value='';
+  }
+  if(id==='modal-unidad'){
+    state.editUnidad=null;
+    document.getElementById('mu-title').textContent='Agregar Unidad';
+    document.getElementById('mu-placas').value='';
+    document.getElementById('mu-unidad').value='';
+    populateChoferSelect('mu-chofer');
+    document.getElementById('mu-chofer').value='';
+  }
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+let _confirmCallback=null;
+function showConfirm(msg, onOk){
+  document.getElementById('confirm-msg').innerHTML=msg;
+  _confirmCallback=onOk;
+  document.getElementById('modal-confirm').classList.add('open');
+}
+function confirmRespond(ok){
+  document.getElementById('modal-confirm').classList.remove('open');
+  if(ok&&_confirmCallback) _confirmCallback();
+  _confirmCallback=null;
+}
+function filterTable(tableId,q){
+  const rows=document.querySelectorAll(`#${tableId} tbody tr`);
+  rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';});
+}
+function getChoferNombre(id){
+  if(!id)return '';
+  const c=state.choferes.find(x=>x.id==id);
+  return c?`${c.nombre} ${c.apellidos}`:'';
+}
+
+// ──────────────────────────────────────────────
+// CHOFERES
+// ──────────────────────────────────────────────
+function renderChoferes(){
+  const tbody=document.getElementById('choferes-tbody');
+  if(!state.choferes.length){tbody.innerHTML='<tr><td colspan="4"><div class="empty-state"><div class="big">👤</div><p>Sin choferes registrados</p></div></td></tr>';return;}
+  tbody.innerHTML=state.choferes.map(c=>`
+    <tr>
+      <td><span class="id-badge">${c.id}</span></td>
+      <td>${c.nombre}</td>
+      <td>${c.apellidos}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="editChofer(${c.id})" title="Editar">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteChofer(${c.id})" title="Eliminar">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function guardarChofer(){
+  const nom=document.getElementById('mc-nombre').value.trim();
+  const ap=document.getElementById('mc-apellidos').value.trim();
+  if(!nom||!ap){showToast('Completa nombre y apellidos');return;}
+  if(state.editChofer!=null){
+    const c=state.choferes.find(x=>x.id==state.editChofer);
+    if(c){c.nombre=nom;c.apellidos=ap;}
+    state.editChofer=null;
+    document.getElementById('mc-title').textContent='Agregar Chofer';
+    showToast('Chofer actualizado');
+  } else {
+    state.choferes.push({id:state.nextChoferID++,nombre:nom,apellidos:ap});
+    showToast('Chofer agregado');
+  }
+  document.getElementById('mc-nombre').value='';
+  document.getElementById('mc-apellidos').value='';
+  closeModal('modal-chofer');
+  renderChoferes();
+  updateDashboard();
+}
+function editChofer(id){
+  const c=state.choferes.find(x=>x.id===id);
+  if(!c)return;
+  state.editChofer=id;
+  document.getElementById('mc-nombre').value=c.nombre;
+  document.getElementById('mc-apellidos').value=c.apellidos;
+  document.getElementById('mc-title').textContent='Editar Chofer';
+  document.getElementById('modal-chofer').classList.add('open');
+  setTimeout(()=>document.getElementById('mc-nombre').focus(),100);
+}
+function deleteChofer(id){
+  const c=state.choferes.find(x=>x.id==id);
+  if(!c)return;
+  showConfirm(`¿Eliminar al chofer <strong>${c.nombre} ${c.apellidos}</strong>?<br><span style="font-size:12px;color:var(--text-light)">Esta acción no se puede deshacer.</span>`, ()=>{
+    state.choferes=state.choferes.filter(x=>x.id!=id);
+    renderChoferes(); updateDashboard(); showToast('Chofer eliminado');
+  });
+}
+
+// ──────────────────────────────────────────────
+// UNIDADES
+// ──────────────────────────────────────────────
+function renderUnidades(){
+  const tbody=document.getElementById('unidades-tbody');
+  tbody.innerHTML=state.unidades.map(u=>`
+    <tr>
+      <td><span class="id-badge">${u.id}</span></td>
+      <td><span class="plate-badge">${u.placas}</span></td>
+      <td><span class="unit-badge">${u.unidad}</span></td>
+      <td>${getChoferNombre(u.chofer_id)||'<span style="color:var(--text-light)">Sin asignar</span>'}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="editUnidad(${u.id})" title="Editar">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteUnidad(${u.id})" title="Eliminar">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function populateChoferSelect(selId){
+  const sel=document.getElementById(selId);
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Sin asignar —</option>';
+  state.choferes.forEach(c=>{
+    const opt=document.createElement('option');
+    opt.value=c.id;opt.textContent=`${c.nombre} ${c.apellidos}`;
+    if(c.id==cur)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function guardarUnidad(){
+  const pl=document.getElementById('mu-placas').value.trim();
+  const un=document.getElementById('mu-unidad').value.trim();
+  const ch=document.getElementById('mu-chofer').value;
+  if(!pl||!un){showToast('Completa placas y número de unidad');return;}
+  if(state.editUnidad!=null){
+    const u=state.unidades.find(x=>x.id==state.editUnidad);
+    if(u){u.placas=pl;u.unidad=un;u.chofer_id=ch?parseInt(ch):null;}
+    state.editUnidad=null;
+    showToast('Unidad actualizada');
+  } else {
+    state.unidades.push({id:state.nextUnidadID++,placas:pl,unidad:un,chofer_id:ch?parseInt(ch):null});
+    showToast('Unidad agregada');
+  }
+  document.getElementById('mu-placas').value='';
+  document.getElementById('mu-unidad').value='';
+  document.getElementById('mu-title').textContent='Agregar Unidad';
+  closeModal('modal-unidad');
+  renderUnidades(); updateDashboard();
+}
+function editUnidad(id){
+  const u=state.unidades.find(x=>x.id===id);
+  if(!u)return;
+  state.editUnidad=id;
+  document.getElementById('mu-placas').value=u.placas;
+  document.getElementById('mu-unidad').value=u.unidad;
+  document.getElementById('mu-title').textContent='Editar Unidad';
+  populateChoferSelect('mu-chofer');
+  document.getElementById('mu-chofer').value=u.chofer_id?String(u.chofer_id):'';
+  document.getElementById('modal-unidad').classList.add('open');
+  setTimeout(()=>document.getElementById('mu-placas').focus(),100);
+}
+function deleteUnidad(id){
+  const u=state.unidades.find(x=>x.id==id);
+  if(!u)return;
+  showConfirm(`¿Eliminar la unidad <strong>${u.unidad}</strong> (${u.placas})?<br><span style="font-size:12px;color:var(--text-light)">Esta acción no se puede deshacer.</span>`, ()=>{
+    state.unidades=state.unidades.filter(x=>x.id!=id);
+    renderUnidades(); updateDashboard(); showToast('Unidad eliminada');
+  });
+}
+
+// ──────────────────────────────────────────────
+// VALE
+// ──────────────────────────────────────────────
+function populateValeSelects(){
+  populateGasolineraSelects();
+  const sel=document.getElementById('v-unidad');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Seleccionar —</option>';
+  state.unidades.forEach(u=>{
+    const o=document.createElement('option');
+    o.value=u.id;o.textContent=`${u.unidad} – ${u.placas}`;
+    if(u.id==cur)o.selected=true;
+    sel.appendChild(o);
+  });
+  updatePreview();
+}
+function autoFillVale(){
+  const uid=document.getElementById('v-unidad').value;
+  const u=state.unidades.find(x=>x.id==uid);
+  document.getElementById('v-placas').value=u?u.placas:'';
+  document.getElementById('v-operador').value=u?getChoferNombre(u.chofer_id):'';
+  updatePreview();
+}
+function calcMonto(){}  // precio no visible en formulario de vale
+function updatePreview(){
+  const uid=document.getElementById('v-unidad').value;
+  const u=state.unidades.find(x=>x.id==uid);
+  const l=document.getElementById('v-litros').value;
+  const now=new Date();
+  document.getElementById('pv-num').textContent='#'+state.nextValeId;
+  document.getElementById('pv-fecha').textContent=now.toLocaleDateString('es-MX');
+  document.getElementById('pv-gas').textContent=document.getElementById('v-gasolinera').value||'—';
+  document.getElementById('pv-unidad').textContent=u?u.unidad:'—';
+  document.getElementById('pv-placas').textContent=u?u.placas:'—';
+  document.getElementById('pv-op').textContent=u?getChoferNombre(u.chofer_id)||'—':'—';
+  document.getElementById('pv-comb').textContent=document.getElementById('v-combustible').value||'—';
+  document.getElementById('pv-litros').textContent=l?`${l} L`:'—';
+  document.getElementById('pv-auth').textContent=document.getElementById('v-autoriza').value||'—';
+}
+function generarVale(){
+  const uid=document.getElementById('v-unidad').value;
+  const litros=document.getElementById('v-litros').value;
+  if(!uid){showToast('Selecciona una unidad');return;}
+  if(!litros){showToast('Ingresa cantidad de litros');return;}
+  const u=state.unidades.find(x=>x.id==uid);
+  const precioActual = state.precioDiesel || null;
+  const vale={
+    id:state.nextValeId++,
+    fecha:new Date().toLocaleDateString('es-MX'),
+    gasolinera:document.getElementById('v-gasolinera').value,
+    unidad_id:u.id, unidad:u.unidad, placas:u.placas,
+    chofer:getChoferNombre(u.chofer_id),
+    combustible:document.getElementById('v-combustible').value,
+    litros:parseFloat(litros),
+    precio: precioActual,
+    monto: precioActual ? parseFloat((parseFloat(litros)*precioActual).toFixed(2)) : null,
+    autoriza:document.getElementById('v-autoriza').value,
+    estado:'Pendiente'
+  };
+  state.vales.unshift(vale);
+  const montoTxt = vale.monto!=null ? ` · $${vale.monto.toFixed(2)}` : ' · (precio pendiente)';
+  showToast(`Vale #${vale.id} generado — ${litros} L${montoTxt}`);
+  limpiarVale();
+  updateDashboard();
+  imprimirTicket(vale);
+}
+function limpiarVale(){
+  document.getElementById('v-litros').value='';
+  document.getElementById('v-autoriza').value='';
+  document.getElementById('v-unidad').value='';
+  document.getElementById('v-placas').value='';
+  document.getElementById('v-operador').value='';
+  updatePreview();
+}
+function imprimirTicket(vale){
+  const now=new Date();
+  const hora=now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const win=window.open('','_blank','width=360,height=620');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Vale #${vale.id}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Courier New',monospace;font-size:12px;color:#111;background:#fff;width:300px;padding:14px;}
+    .center{text-align:center;}
+    .brand{font-size:17px;font-weight:900;letter-spacing:2px;text-transform:uppercase;}
+    .sub{font-size:10px;letter-spacing:1px;color:#555;margin-bottom:2px;}
+    .divider{border:none;border-top:1px dashed #aaa;margin:8px 0;}
+    .divider-solid{border:none;border-top:2px solid #111;margin:8px 0;}
+    .num{font-size:30px;font-weight:900;letter-spacing:3px;}
+    .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #ddd;}
+    .row .lbl{color:#555;font-size:11px;}
+    .row .val{font-weight:700;font-size:11px;text-align:right;}
+    .litros-big{font-size:34px;font-weight:900;text-align:center;letter-spacing:2px;margin:10px 0 2px;}
+    .litros-lbl{text-align:center;font-size:10px;color:#555;letter-spacing:1px;text-transform:uppercase;}
+    .firma-box{margin-top:22px;text-align:center;}
+    .firma-line{border-top:1px solid #111;margin:0 20px;padding-top:4px;font-size:10px;color:#555;}
+    .footer{margin-top:14px;font-size:9px;color:#888;text-align:center;line-height:1.7;}
+    @media print{body{width:100%;padding:4px;}@page{margin:4mm;size:80mm auto;}}
+  </style></head><body>
+  <div class="center">
+    <div class="brand">GMH DIESEL</div>
+    <img src="${LOGO_SRC}" style="width:140px;margin:6px auto;display:block;" alt="Grupo Minero Honey">
+    <div class="sub">Grupo Minero Honey</div>
+    <div class="sub">${vale.gasolinera}</div>
+  </div>
+  <hr class="divider-solid">
+  <div class="center">
+    <div class="sub">VALE DE COMBUSTIBLE</div>
+    <div class="num">#${String(vale.id).padStart(4,'0')}</div>
+  </div>
+  <hr class="divider">
+  <div class="row"><span class="lbl">Fecha</span><span class="val">${vale.fecha}</span></div>
+  <div class="row"><span class="lbl">Hora</span><span class="val">${hora}</span></div>
+  <div class="row"><span class="lbl">Unidad</span><span class="val">${vale.unidad}</span></div>
+  <div class="row"><span class="lbl">Placas</span><span class="val">${vale.placas}</span></div>
+  <div class="row"><span class="lbl">Operador</span><span class="val">${vale.chofer||'—'}</span></div>
+  <div class="row"><span class="lbl">Combustible</span><span class="val">${vale.combustible}</span></div>
+  <div class="row"><span class="lbl">Autoriza</span><span class="val">${vale.autoriza||'—'}</span></div>
+  <hr class="divider-solid">
+  <div class="litros-big">${vale.litros} L</div>
+  <div class="litros-lbl">Litros a despachar</div>
+  <hr class="divider-solid">
+  <div class="firma-box">
+    <div style="height:38px;"></div>
+    <div class="firma-line">Firma del Operador</div>
+  </div>
+  <div class="firma-box" style="margin-top:20px;">
+    <div style="height:38px;"></div>
+    <div class="firma-line">Firma del Despachador</div>
+  </div>
+  <hr class="divider" style="margin-top:18px;">
+  <div class="footer">
+    Original: Administración &nbsp;|&nbsp; Copia: Chofer<br>
+    Vale válido únicamente para el día indicado.<br>
+    GMH — Gestión de Flotilla
+  </div>
+  <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>
+  </body></html>`);
+  win.document.close();
+}
+function imprimirVale(){/* botón de preview – redirige al último vale */
+  if(state.vales.length) imprimirTicket(state.vales[0]);
+}
+
+// ──────────────────────────────────────────────
+// CONSULTAR
+// ──────────────────────────────────────────────
+function buscarVales(){
+  const tbody=document.getElementById('consulta-tbody');
+  const exc=document.getElementById('f-excepcion').value.toLowerCase();
+  let filtered=state.vales.filter(v=>{
+    if(exc&&!v.unidad.toLowerCase().includes(exc)&&!v.placas.toLowerCase().includes(exc)&&!String(v.id).includes(exc))return false;
+    return true;
+  });
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="big">🔍</div><p>Sin resultados</p></div></td></tr>';
+    document.getElementById('consulta-count').textContent='Total de vales: 0';
+    document.getElementById('consulta-total').textContent='Total importes: $0.00';
+    return;
+  }
+  tbody.innerHTML=filtered.map(v=>`
+    <tr style="${v.estado==='Cancelado'?'opacity:.55;':''}">
+      <td><span class="id-badge">#${v.id}</span></td>
+      <td>${v.fecha}</td>
+      <td>${v.gasolinera}</td>
+      <td><span class="unit-badge">${v.unidad}</span></td>
+      <td>${v.combustible}</td>
+      <td>${v.litros} L</td>
+      <td>${v.monto!=null?`<strong>$${v.monto.toFixed(2)}</strong>`:'<span style="color:var(--text-light);font-size:12px">Sin precio</span>'}</td>
+      <td><span class="chip ${v.estado==='Pagado'?'chip-green':v.estado==='Cancelado'?'chip-grey':v.estado==='Pendiente'?'chip-amber':'chip-red'}">${v.estado}</span></td>
+      <td style="display:flex;gap:5px;">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="verVale(${v.id})" title="Ver detalle">👁</button>
+        ${v.estado==='Pendiente'?`<button class="btn btn-danger btn-sm btn-icon" onclick="cancelarVale(${v.id})" title="Cancelar">✕</button>`:''}
+      </td>
+    </tr>`).join('');
+  const total=filtered.reduce((s,v)=>s+(v.monto||0),0);
+  document.getElementById('consulta-count').textContent=`Total de vales: ${filtered.length}`;
+  document.getElementById('consulta-total').textContent=`Total importes: $${total.toFixed(2)}`;
+}
+function exportarVales(){showToast('Exportando a Excel...');}
+function verVale(id){
+  const v=state.vales.find(x=>x.id===id);
+  if(!v)return;
+  document.getElementById('ver-vale-content').innerHTML=`
+    <div class="vale-preview" style="box-shadow:none;border:none;padding:0">
+      <div class="vale-row"><span class="lbl">Vale No.</span><span class="val">#${v.id}</span></div>
+      <div class="vale-row"><span class="lbl">Fecha</span><span class="val">${v.fecha}</span></div>
+      <div class="vale-row"><span class="lbl">Gasolinera</span><span class="val">${v.gasolinera}</span></div>
+      <div class="vale-row"><span class="lbl">Unidad</span><span class="val">${v.unidad} (${v.placas})</span></div>
+      <div class="vale-row"><span class="lbl">Chofer</span><span class="val">${v.chofer||'—'}</span></div>
+      <div class="vale-row"><span class="lbl">Combustible</span><span class="val">${v.combustible}</span></div>
+      <div class="vale-row"><span class="lbl">Litros</span><span class="val">${v.litros} L</span></div>
+      ${v.precio!=null?`<div class="vale-row"><span class="lbl">Precio/L</span><span class="val">$${v.precio.toFixed(2)}</span></div>`:''}
+      <div class="vale-row"><span class="lbl">Autoriza</span><span class="val">${v.autoriza||'—'}</span></div>
+      ${v.monto!=null?`<div class="vale-total"><div class="lbl">Monto Total</div><div class="val">$${v.monto.toFixed(2)}</div></div>`:'<div style="margin-top:12px;padding:12px;background:rgba(201,68,18,0.08);border-radius:8px;font-size:12.5px;color:var(--amber-dark)">⚠️ Precio no asignado aún. Ir a <strong>Registrar Pago</strong> para asignar precio.</div>'}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="imprimirTicket(state.vales.find(x=>x.id===${v.id}))">🖨️ Imprimir</button>
+      ${v.estado==='Pendiente'?`<button class="btn btn-success" onclick="marcarPagado(${v.id})">✓ Marcar Pagado</button>`:''}
+    </div>`;
+  openModal('modal-ver-vale');
+}
+
+// ──────────────────────────────────────────────
+// PAGOS
+// ──────────────────────────────────────────────
+function renderPagosPorDia(){
+  const precioOverride = parseFloat(document.getElementById('p-precio-litro').value)||0;
+  const gasFilter = document.getElementById('p-gasolinera').value;
+  const container = document.getElementById('pagos-dias-container');
+  const totalesBar = document.getElementById('pagos-totales-bar');
+
+  // Apply price override to vales without price
+  if(precioOverride>0){
+    state.vales.forEach(v=>{
+      if(v.estado==='Pendiente'&&v.monto==null){
+        v.precio=precioOverride;
+        v.monto=parseFloat((v.litros*precioOverride).toFixed(2));
+      }
+    });
+  }
+
+  let pendientes = state.vales.filter(v=>v.estado==='Pendiente');
+  if(gasFilter) pendientes = pendientes.filter(v=>v.gasolinera===gasFilter);
+
+  if(!pendientes.length){
+    container.innerHTML=`<div class="card"><div class="card-body">
+      <div class="empty-state"><div class="big">✅</div><p>No hay vales pendientes de pago${gasFilter?' para '+gasFilter:''}.</p></div>
+    </div></div>`;
+    totalesBar.style.display='none';
+    return;
+  }
+
+  // Group by fecha
+  const porDia = {};
+  pendientes.forEach(v=>{
+    if(!porDia[v.fecha]) porDia[v.fecha]={vales:[],litros:0,monto:0,sinPrecio:0};
+    porDia[v.fecha].vales.push(v);
+    porDia[v.fecha].litros += v.litros;
+    if(v.monto!=null) porDia[v.fecha].monto += v.monto;
+    else porDia[v.fecha].sinPrecio++;
+  });
+
+  // Sort days oldest first
+  const dias = Object.keys(porDia).sort((a,b)=>{
+    const parse = s => { const p=s.split('/'); return new Date(p[2],p[1]-1,p[0]); };
+    return parse(a)-parse(b);
+  });
+
+  let totalDias=dias.length, totalVales=0, totalLitros=0, totalMonto=0;
+
+  container.innerHTML = dias.map(fecha=>{
+    const d = porDia[fecha];
+    totalVales += d.vales.length;
+    totalLitros += d.litros;
+    totalMonto += d.monto;
+    const ids = d.vales.map(v=>v.id).join(',');
+    const puedePagar = d.sinPrecio===0;
+
+    return `
+    <div class="card" style="margin-bottom:16px;" id="dia-card-${fecha.replace(/\//g,'-')}">
+      <!-- Day header -->
+      <div style="padding:14px 20px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-radius:12px 12px 0 0;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--white);">📅 ${fecha}</div>
+          <span class="chip chip-amber" style="font-size:12px;">${d.vales.length} vale${d.vales.length>1?'s':''}</span>
+          <span style="font-size:13px;color:rgba(255,255,255,.6);">${d.litros.toFixed(0)} L</span>
+          ${d.sinPrecio>0?`<span class="chip chip-red">${d.sinPrecio} sin precio</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="text-align:right;">
+            <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.4);">Total del día</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:${puedePagar?'var(--amber-light)':'rgba(255,255,255,.4)'};">
+              ${puedePagar?`$${d.monto.toFixed(2)}`:'—'}
+            </div>
+          </div>
+          ${puedePagar
+            ? `<button class="btn btn-success" onclick="pagarDia('${ids}','${fecha}')">💳 Pagar día</button>`
+            : `<button class="btn btn-secondary btn-sm" style="opacity:.5;cursor:default" disabled title="Asigna precio a todos los vales primero">Sin precio</button>`
+          }
+        </div>
+      </div>
+      <!-- Vales table -->
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>VALE</th><th>UNIDAD</th><th>CHOFER</th><th>COMBUSTIBLE</th><th>LITROS</th><th>PRECIO/L</th><th>MONTO</th><th>GASOLINERA</th></tr></thead>
+          <tbody>
+            ${d.vales.map(v=>`
+            <tr>
+              <td><span class="id-badge">#${v.id}</span></td>
+              <td><span class="unit-badge">${v.unidad}</span> <span style="font-size:11px;color:var(--text-light)">${v.placas}</span></td>
+              <td>${v.chofer||'—'}</td>
+              <td>${v.combustible}</td>
+              <td>${v.litros} L</td>
+              <td>${v.precio!=null?`$${v.precio.toFixed(2)}`:'<span style="color:var(--danger);font-size:12px">⚠ Sin precio</span>'}</td>
+              <td>${v.monto!=null?`<strong>$${v.monto.toFixed(2)}</strong>`:'—'}</td>
+              <td style="font-size:12px;color:var(--text-light)">${v.gasolinera}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Update totals bar
+  document.getElementById('p-total-dias').textContent = totalDias;
+  document.getElementById('p-total-vales').textContent = totalVales;
+  document.getElementById('p-total-litros').textContent = totalLitros.toFixed(0)+' L';
+  document.getElementById('p-total-monto').textContent = '$'+totalMonto.toFixed(2);
+  totalesBar.style.display = 'block';
+  updateDashboard();
+}
+
+function pagarDia(idsStr, fecha){
+  const ids = idsStr.split(',').map(Number);
+  let pagados=0;
+  ids.forEach(id=>{
+    const v=state.vales.find(x=>x.id===id);
+    if(v&&v.estado==='Pendiente'&&v.monto!=null){ v.estado='Pagado'; pagados++; }
+  });
+  showToast(`✅ ${pagados} vale${pagados>1?'s':''} del ${fecha} marcados como pagados`);
+  renderPagosPorDia();
+  updateDashboard();
+}
+
+function pagarTodo(){
+  const pendientes = state.vales.filter(v=>v.estado==='Pendiente'&&v.monto!=null);
+  if(!pendientes.length){ showToast('No hay vales con precio asignado para pagar'); return; }
+  pendientes.forEach(v=>v.estado='Pagado');
+  showToast(`✅ ${pendientes.length} vales marcados como pagados`);
+  renderPagosPorDia();
+  updateDashboard();
+}
+
+function buscarPagos(){ renderPagosPorDia(); }
+
+function marcarPagado(id){
+  const v=state.vales.find(x=>x.id===id);
+  if(v){
+    if(v.monto==null){showToast('Asigna un precio antes de marcar como pagado');return;}
+    v.estado='Pagado';
+  }
+  showToast(`Vale #${id} marcado como pagado`);
+  closeModal('modal-ver-vale');
+  updateDashboard();
+}
+
+
+// ──────────────────────────────────────────────
+// DASHBOARD
+// ──────────────────────────────────────────────
+function updateDashboard(){
+  const now=new Date();
+  const mesActual=now.getMonth(), anioActual=now.getFullYear();
+  const mesPrev=mesActual===0?11:mesActual-1;
+  const anioPrev=mesActual===0?anioActual-1:anioActual;
+
+  // Helper: parse dd/mm/yyyy
+  const parseF=s=>{if(!s)return null;const p=s.split('/');return p.length===3?new Date(p[2],p[1]-1,p[0]):null;};
+
+  const valesActivos=state.vales.filter(v=>v.estado!=='Cancelado');
+
+  document.getElementById('stat-vales').textContent=valesActivos.length;
+  document.getElementById('stat-unidades').textContent=state.unidades.length;
+  document.getElementById('stat-choferes').textContent=state.choferes.length;
+
+  // Litros este mes vs mes anterior
+  const ltsEsteMes=valesActivos.filter(v=>{const d=parseF(v.fecha);return d&&d.getMonth()===mesActual&&d.getFullYear()===anioActual;}).reduce((s,v)=>s+v.litros,0);
+  const ltsMesAnterior=valesActivos.filter(v=>{const d=parseF(v.fecha);return d&&d.getMonth()===mesPrev&&d.getFullYear()===anioPrev;}).reduce((s,v)=>s+v.litros,0);
+
+  document.getElementById('stat-importe').textContent=ltsEsteMes.toFixed(0)+' L';
+
+  const compEl=document.getElementById('stat-mes-comparacion');
+  if(ltsMesAnterior===0&&ltsEsteMes===0){
+    compEl.textContent='Sin datos del mes anterior';
+    compEl.style.color='var(--text-light)';
+  } else if(ltsMesAnterior===0){
+    compEl.textContent='Primer mes con datos';
+    compEl.style.color='var(--text-light)';
+  } else {
+    const diff=ltsEsteMes-ltsMesAnterior;
+    const pct=((diff/ltsMesAnterior)*100).toFixed(1);
+    const arrow=diff>=0?'▲':'▼';
+    compEl.textContent=`${arrow} ${Math.abs(pct)}% vs mes anterior (${ltsMesAnterior.toFixed(0)} L)`;
+    compEl.style.color=diff<=0?'var(--success)':'var(--danger)';
+  }
+
+  // Deuda pendiente (vales sin pagar que tienen precio asignado)
+  const pendientes=valesActivos.filter(v=>v.estado==='Pendiente'&&v.monto!=null);
+  const totalDeuda=pendientes.reduce((s,v)=>s+v.monto,0);
+  const sinPrecio=valesActivos.filter(v=>v.estado==='Pendiente'&&v.monto==null).length;
+  document.getElementById('stat-deuda').textContent=`$${totalDeuda.toFixed(2)}`;
+  document.getElementById('stat-deuda-sub').textContent=
+    `${pendientes.length} vales con precio${sinPrecio>0?` · ${sinPrecio} sin precio`:''} · ver detalle ▾`;
+
+  // Deuda por gasolinera
+  const byGas={};
+  pendientes.forEach(v=>{
+    if(!byGas[v.gasolinera])byGas[v.gasolinera]={litros:0,monto:0,count:0};
+    byGas[v.gasolinera].litros+=v.litros;
+    byGas[v.gasolinera].monto+=v.monto;
+    byGas[v.gasolinera].count++;
+  });
+  const detail=document.getElementById('deuda-detail-content');
+  if(!Object.keys(byGas).length){
+    detail.innerHTML=`<p style="color:var(--text-light);font-size:13.5px;">
+      ${sinPrecio>0?`Hay ${sinPrecio} vale(s) pendientes sin precio asignado. Ingresa el precio en <strong>Registrar Pago</strong> para calcular la deuda.`:'No hay deuda pendiente con precio registrado.'}
+    </p>`;
+  } else {
+    detail.innerHTML=`
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+        <thead><tr style="background:var(--navy)">
+          <th style="padding:10px 16px;color:rgba(255,255,255,.85);text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase">GASOLINERA</th>
+          <th style="padding:10px 16px;color:rgba(255,255,255,.85);text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase">VALES</th>
+          <th style="padding:10px 16px;color:rgba(255,255,255,.85);text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase">LITROS</th>
+          <th style="padding:10px 16px;color:rgba(255,255,255,.85);text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase">DEUDA</th>
+          <th style="padding:10px 16px;color:rgba(255,255,255,.85);text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase">ACCIÓN</th>
+        </tr></thead>
+        <tbody>
+          ${Object.entries(byGas).map(([g,d])=>`
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;font-weight:600">${g}</td>
+            <td style="padding:12px 16px;text-align:center"><span class="chip chip-amber">${d.count}</span></td>
+            <td style="padding:12px 16px;text-align:right">${d.litros.toFixed(0)} L</td>
+            <td style="padding:12px 16px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--danger)">$${d.monto.toFixed(2)}</td>
+            <td style="padding:12px 16px;text-align:center"><button class="btn btn-success btn-sm" onclick="showPanel('pagos')">💳 Ir a Pagar</button></td>
+          </tr>`).join('')}
+          <tr style="background:var(--mist)">
+            <td style="padding:12px 16px;font-weight:700" colspan="2">TOTAL PENDIENTE</td>
+            <td style="padding:12px 16px;text-align:right;font-weight:700">${pendientes.reduce((s,v)=>s+v.litros,0).toFixed(0)} L</td>
+            <td style="padding:12px 16px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--danger)">$${totalDeuda.toFixed(2)}</td>
+            <td></td>
+          </tr>
+          ${sinPrecio>0?`<tr><td colspan="5" style="padding:10px 16px;background:rgba(201,68,18,0.06);font-size:12px;color:var(--amber-dark)">⚠️ ${sinPrecio} vale(s) pendientes aún sin precio — asígna el precio en <strong>Registrar Pago</strong></td></tr>`:''}
+        </tbody>
+      </table>`;
+  }
+
+  // tabla últimos vales
+  const tbody=document.getElementById('dash-vales-tbody');
+  if(!valesActivos.length){
+    tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="big">⛽</div><p>No hay vales generados aún.</p></div></td></tr>';
+  } else {
+    tbody.innerHTML=valesActivos.slice(0,10).map(v=>`
+      <tr>
+        <td><span class="id-badge">#${v.id}</span></td>
+        <td>${v.fecha}</td>
+        <td><span class="unit-badge">${v.unidad}</span></td>
+        <td>${v.chofer||'—'}</td>
+        <td>${v.litros} L</td>
+        <td>${v.monto!=null?`<strong>$${v.monto.toFixed(2)}</strong>`:'<span style="color:var(--text-light);font-size:12px">Sin precio</span>'}</td>
+        <td><span class="chip ${v.estado==='Pagado'?'chip-green':v.estado==='Cancelado'?'chip-grey':'chip-amber'}">${v.estado}</span></td>
+        <td>${v.estado==='Pendiente'?`<button class="btn btn-danger btn-sm" onclick="cancelarVale(${v.id})" title="Cancelar vale">✕ Cancelar</button>`:'—'}</td>
+      </tr>`).join('');
+  }
+  renderChartLitros();
+}
+function toggleDeuda(){
+  const card=document.getElementById('deuda-detail-card');
+  card.style.display=card.style.display==='none'?'block':'none';
+}
+
+// ──────────────────────────────────────────────
+// GASOLINERAS
+// ──────────────────────────────────────────────
+function renderGasolineras(){
+  const tbody=document.getElementById('gasolineras-tbody');
+  tbody.innerHTML=state.gasolineras.map((g,i)=>{
+    const valesG=state.vales.filter(v=>v.gasolinera===g&&v.estado!=='Cancelado');
+    const litrosG=valesG.reduce((s,v)=>s+v.litros,0);
+    return `<tr>
+      <td><span class="id-badge">${i+1}</span></td>
+      <td style="font-weight:600">${g}</td>
+      <td>${valesG.length}</td>
+      <td>${litrosG.toFixed(0)} L</td>
+      <td><div class="action-btns">
+        <button class="btn btn-danger btn-sm btn-icon" onclick="eliminarGasolinera(${i})" title="Eliminar">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5"><div class="empty-state"><div class="big">⛽</div><p>Sin gasolineras registradas</p></div></td></tr>';
+}
+function guardarGasolinera(){
+  const nom=document.getElementById('mg-nombre').value.trim();
+  if(!nom){showToast('Ingresa el nombre');return;}
+  if(state.gasolineras.includes(nom)){showToast('Ya existe esa gasolinera');return;}
+  state.gasolineras.push(nom);
+  document.getElementById('mg-nombre').value='';
+  closeModal('modal-gasolinera');
+  renderGasolineras();
+  populateGasolineraSelects();
+  showToast('Gasolinera agregada');
+}
+function eliminarGasolinera(i){
+  const nombre=state.gasolineras[i];
+  const enUso=state.vales.some(v=>v.gasolinera===nombre);
+  if(enUso){showToast('No se puede eliminar: tiene vales asociados');return;}
+  showConfirm(`¿Eliminar la gasolinera <strong>"${nombre}"</strong>?<br><span style="font-size:12px;color:var(--text-light)">Esta acción no se puede deshacer.</span>`, ()=>{
+    state.gasolineras.splice(i,1);
+    renderGasolineras();
+    populateGasolineraSelects();
+    showToast('Gasolinera eliminada');
+  });
+}
+function populateGasolineraSelects(){
+  const opts = state.gasolineras.map(g=>`<option value="${g}">${g}</option>`).join('');
+  const optsAll = `<option value="">Todas las gasolineras</option>`+opts;
+  // generar vale
+  const vg=document.getElementById('v-gasolinera'); if(vg){const c=vg.value;vg.innerHTML=opts;if(state.gasolineras.includes(c))vg.value=c;}
+  // consultar
+  const fg=document.getElementById('f-gasolinera'); if(fg){const c=fg.value;fg.innerHTML=optsAll;fg.value=c||'';}
+  // pagos
+  const pg=document.getElementById('p-gasolinera'); if(pg){const c=pg.value;pg.innerHTML=optsAll;pg.value=c||'';}
+  // modal precio
+  const mp=document.getElementById('mp-gasolinera'); if(mp){const c=mp.value;mp.innerHTML=`<option value="Todas">Aplica a todas</option>`+opts;mp.value=c||'Todas';}
+}
+
+// ──────────────────────────────────────────────
+// CANCELAR VALE
+// ──────────────────────────────────────────────
+let _cancelarId = null;
+function cancelarVale(id){
+  const v=state.vales.find(x=>x.id===id);
+  if(!v)return;
+  _cancelarId=id;
+  document.getElementById('cancelar-info').innerHTML=
+    `<strong>Vale #${v.id}</strong> — ${v.fecha}<br>
+     Unidad: <strong>${v.unidad}</strong> (${v.placas})<br>
+     Chofer: ${v.chofer||'—'}<br>
+     Litros: <strong>${v.litros} L</strong>${v.monto!=null?`<br>Monto: <strong>$${v.monto.toFixed(2)}</strong>`:''}`;
+  document.getElementById('cancelar-motivo').value='';
+  openModal('modal-cancelar');
+}
+function confirmarCancelacion(){
+  const v=state.vales.find(x=>x.id===_cancelarId);
+  if(!v)return;
+  v.estado='Cancelado';
+  v.motivoCancelacion=document.getElementById('cancelar-motivo').value.trim();
+  _cancelarId=null;
+  closeModal('modal-cancelar');
+  showToast(`Vale #${v.id} cancelado`);
+  updateDashboard();
+  // refresh whichever panel is active
+  if(document.getElementById('panel-consultar').classList.contains('active')) buscarVales();
+  if(document.getElementById('panel-pagos').classList.contains('active')) renderPagosPorDia();
+}
+
+// ──────────────────────────────────────────────
+// PRECIO DIESEL
+// ──────────────────────────────────────────────
+function guardarPrecioDiesel(){
+  const precio=parseFloat(document.getElementById('mp-precio').value);
+  if(!precio||precio<=0){showToast('Ingresa un precio válido');return;}
+  const gasolinera=document.getElementById('mp-gasolinera').value;
+  const nota=document.getElementById('mp-nota').value.trim();
+  const now=new Date();
+  const entrada={
+    precio,
+    gasolinera,
+    nota,
+    fecha: now.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}),
+    hora: now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
+  };
+  state.precioHistorial.unshift(entrada);
+  state.precioDiesel=precio;
+  // Pre-fill pagos input with new price
+  const inp=document.getElementById('p-precio-litro');
+  if(inp) inp.value=precio.toFixed(2);
+  closeModal('modal-precio');
+  document.getElementById('mp-precio').value='';
+  document.getElementById('mp-nota').value='';
+  showToast(`Precio actualizado a $${precio.toFixed(2)}/L`);
+  renderPrecioDiesel();
+}
+function renderPrecioDiesel(){
+  const p=state.precioDiesel;
+  const display=document.getElementById('precio-display');
+  const vig=document.getElementById('precio-vigencia');
+  const hist=document.getElementById('precio-historial');
+  if(!display||!hist)return;
+  if(p){
+    display.textContent=`$${p.toFixed(2)}`;
+    display.style.color='var(--navy)';
+    const last=state.precioHistorial[0];
+    vig.textContent=last?`Actualizado ${last.fecha} ${last.hora}`:'';
+  } else {
+    display.textContent='Sin precio';
+    display.style.color='var(--text-light)';
+    vig.textContent='';
+  }
+  if(!state.precioHistorial.length){
+    hist.innerHTML='<span style="font-size:12px;color:var(--text-light)">Sin historial aún</span>';
+    return;
+  }
+  hist.innerHTML=state.precioHistorial.slice(0,5).map((h,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;${i===0?'font-weight:700;color:var(--navy)':'color:var(--text-light)'}">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;">$${h.precio.toFixed(2)}</span>
+      <span>·</span>
+      <span>${h.fecha}</span>
+      ${h.gasolinera&&h.gasolinera!=='Todas'?`<span style="background:rgba(201,68,18,0.10);color:var(--amber-dark);padding:1px 6px;border-radius:4px;font-size:10px;">${h.gasolinera}</span>`:''}
+      ${h.nota?`<span style="font-style:italic">${h.nota}</span>`:''}
+      ${i===0?'<span style="background:var(--success);color:white;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;">ACTUAL</span>':''}
+    </div>`).join('');
+}
+
+// ──────────────────────────────────────────────
+// GRÁFICA LITROS POR DÍA
+// ──────────────────────────────────────────────
+function renderChartLitros(){
+  const canvas=document.getElementById('chart-litros');
+  const empty=document.getElementById('chart-empty');
+  if(!canvas)return;
+
+  const dias=parseInt(document.getElementById('chart-periodo')?.value||30);
+  const parseF=s=>{if(!s)return null;const p=s.split('/');return p.length===3?new Date(p[2],p[1]-1,p[0]):null;};
+
+  // Build array of last N days
+  const today=new Date(); today.setHours(0,0,0,0);
+  const labels=[], litrosPorDia=[];
+  for(let i=dias-1;i>=0;i--){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    const key=d.toLocaleDateString('es-MX');
+    labels.push(key);
+    const total=state.vales
+      .filter(v=>v.estado!=='Cancelado'&&v.fecha===key)
+      .reduce((s,v)=>s+v.litros,0);
+    litrosPorDia.push(total);
+  }
+
+  const hasData=litrosPorDia.some(v=>v>0);
+  if(!hasData){
+    canvas.style.display='none';
+    empty.style.display='block';
+    return;
+  }
+  canvas.style.display='block';
+  empty.style.display='none';
+
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth-48;
+  const H=canvas.parentElement.clientHeight||180;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  const pad={top:18,right:16,bottom:52,left:52};
+  const chartW=W-pad.left-pad.right;
+  const chartH=H-pad.top-pad.bottom;
+  const maxVal=Math.max(...litrosPorDia)*1.15||100;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines
+  const gridLines=5;
+  ctx.font='11px Barlow,sans-serif';
+  ctx.textAlign='right';
+  for(let i=0;i<=gridLines;i++){
+    const y=pad.top+chartH-(chartH/gridLines*i);
+    const val=Math.round(maxVal/gridLines*i);
+    ctx.strokeStyle='rgba(143,58,20,0.07)';
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+chartW,y); ctx.stroke();
+    ctx.fillStyle='#8896A8';
+    ctx.fillText(val+'L',pad.left-6,y+4);
+  }
+
+  // Today marker index
+  const todayKey=today.toLocaleDateString('es-MX');
+  const todayIdx=labels.indexOf(todayKey);
+
+  // Bar width
+  const barW=Math.max(4,Math.min(28,(chartW/labels.length)*0.65));
+  const step=chartW/(labels.length);
+
+  // Draw bars
+  labels.forEach((lbl,i)=>{
+    const x=pad.left+step*i+step/2-barW/2;
+    const val=litrosPorDia[i];
+    const barH=(val/maxVal)*chartH;
+    const y=pad.top+chartH-barH;
+    const isToday=i===todayIdx;
+    const isEmpty=val===0;
+
+    // Bar fill — gradient
+    const grad=ctx.createLinearGradient(0,y,0,y+barH);
+    if(isToday){
+      grad.addColorStop(0,'#E8784E');
+      grad.addColorStop(1,'#C94412');
+    } else {
+      grad.addColorStop(0,'rgba(168,72,32,0.80)');
+      grad.addColorStop(1,'rgba(168,72,32,0.65)');
+    }
+    ctx.fillStyle=isEmpty?'rgba(201,68,18,0.08)':grad;
+    const r=3;
+    if(!isEmpty&&barH>=r*2){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y); ctx.lineTo(x+barW-r,y);
+      ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
+      ctx.lineTo(x+barW,y+barH); ctx.lineTo(x,y+barH);
+      ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.closePath(); ctx.fill();
+    } else if(!isEmpty){
+      ctx.fillRect(x,y,barW,barH);
+    } else {
+      ctx.fillRect(x,pad.top+chartH-2,barW,2);
+    }
+
+    // Value label on top
+    if(val>0){
+      ctx.font=`${isToday?'700':'500'} 10px Barlow,sans-serif`;
+      ctx.fillStyle=isToday?'#7A2A0A':'#4A5568';
+      ctx.textAlign='center';
+      ctx.fillText(val+'L',x+barW/2,y-4);
+    }
+
+    // X-axis label — only show some to avoid crowding
+    const showLabel = dias<=15 || i%Math.ceil(dias/15)===0 || i===labels.length-1 || isToday;
+    if(showLabel){
+      const parts=lbl.split('/');
+      const shortLbl=parts.length===3?`${parts[0]}/${parts[1]}`:'';
+      ctx.font=isToday?'700 10px Barlow,sans-serif':'10px Barlow,sans-serif';
+      ctx.fillStyle=isToday?'#C94412':'#8896A8';
+      ctx.textAlign='center';
+      ctx.fillText(shortLbl,x+barW/2,pad.top+chartH+14);
+      if(isToday){
+        ctx.font='700 9px Barlow,sans-serif';
+        ctx.fillStyle='#C94412';
+        ctx.fillText('HOY',x+barW/2,pad.top+chartH+26);
+      }
+    }
+  });
+
+  // Axis line
+  ctx.strokeStyle='rgba(143,58,20,0.15)';
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad.left,pad.top);
+  ctx.lineTo(pad.left,pad.top+chartH);
+  ctx.lineTo(pad.left+chartW,pad.top+chartH);
+  ctx.stroke();
+}
+
+// ──────────────────────────────────────────────
+// LOGIN
+// ──────────────────────────────────────────────
+function doLogin(){
+  const u=document.getElementById('login-user').value.trim();
+  const p=document.getElementById('login-pass').value;
+  if(u==='Grupo_Minero_Honey'&&p==='HannaDracoMia10'){
+    document.getElementById('login-screen').style.opacity='0';
+    document.getElementById('login-screen').style.transition='opacity .4s';
+    setTimeout(()=>{
+      document.getElementById('login-screen').style.display='none';
+    },400);
+  } else {
+    const err=document.getElementById('login-error');
+    err.style.display='block';
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-pass').focus();
+    const card=document.querySelector('#login-screen > div');
+    if(card){card.style.animation='none';void card.offsetWidth;card.style.animation='shake .4s ease';}
+  }
+}
+function toggleLoginPass(){
+  const inp=document.getElementById('login-pass');
+  const eye=document.getElementById('login-eye');
+  if(inp.type==='password'){inp.type='text';eye.textContent='🙈';}
+  else{inp.type='password';eye.textContent='👁';}
+}
+function doLogout(){
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').style.display='none';
+  const ls=document.getElementById('login-screen');
+  ls.style.display='flex';
+  ls.style.opacity='0';
+  ls.style.transition='opacity .3s';
+  setTimeout(()=>ls.style.opacity='1',10);
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('login-logo').src = LOGO_SRC;
+  const d=new Date();
+  document.getElementById('todayDate').textContent=d.toLocaleDateString('es-MX',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('modal-confirm').addEventListener('click',e=>{if(e.target===document.getElementById('modal-confirm'))confirmRespond(false);});
+  document.getElementById('modal-chofer').addEventListener('click',e=>{if(e.target===document.getElementById('modal-chofer'))closeModal('modal-chofer');});
+  document.getElementById('modal-unidad').addEventListener('click',e=>{if(e.target===document.getElementById('modal-unidad'))closeModal('modal-unidad');});
+  document.getElementById('modal-ver-vale').addEventListener('click',e=>{if(e.target===document.getElementById('modal-ver-vale'))closeModal('modal-ver-vale');});
+  document.getElementById('modal-precio').addEventListener('click',e=>{if(e.target===document.getElementById('modal-precio'))closeModal('modal-precio');});
+  document.getElementById('modal-gasolinera').addEventListener('click',e=>{if(e.target===document.getElementById('modal-gasolinera'))closeModal('modal-gasolinera');});
+  document.getElementById('modal-cancelar').addEventListener('click',e=>{if(e.target===document.getElementById('modal-cancelar'))closeModal('modal-cancelar');});
+  populateGasolineraSelects();
+  updateDashboard();
+  renderPrecioDiesel();
+  window.addEventListener('resize',()=>{
+    if(document.getElementById('panel-dashboard').classList.contains('active')) renderChartLitros();
+  });
+  ['v-gasolinera','v-combustible','v-autoriza'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',updatePreview);
+    document.getElementById(id).addEventListener('change',updatePreview);
+  });
+});
+const LOGO_SRC = "data:image/png;base64,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";
+
+</script>
+</body>
+</html>
